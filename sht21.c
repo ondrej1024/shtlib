@@ -26,6 +26,7 @@
 //              23.04.2015 (OW) Added SHT21_Init()
 //              24.04.2015 (OW) Changed humidity calculation, code cleanup
 //              27.04.2015 (OW) Added SHT21_Cleanup()
+//              26.05.2015 (OW) Optimised calculation for sensor value conversion
 //------------------------------------------------------------------------------
 
 /**** Includes ****************************************************************/
@@ -200,17 +201,16 @@ uint8_t SHT21_Read(int16_t *temp, uint16_t *humidity)
       val = d[0];
       val <<= 8;
       val += d[1];
-      val &= 0xFFFC;
-      
-      //	T = -46,85 + 175,72 * St/65535      da 1/10K -->  * 10
-      //	T = -468,5 + 1757,2 * St/65535		verinfachen
-      //	T = -468,5 + St / 37,2956..		damit Konstante ganzzahlig wird mit 2 erweitern
-      //        T = -937 + 2*St / 37,2956..		Bruch für Division mit 256 erweitern  
-      //	T = (-937 +  (St * 512) / (37,2956.. * 256)  )  / 2
-      //	T = (((St * 512) / 9548) - 937) / 2
-      
-      *temp = ((val * 512) / 9548);
-      *temp = ((*temp) - 937) / 2;       
+      val &= 0xFFFC;      
+     
+      // Convert raw value from sensor to one tenth of a Celsius temperature
+      // From datasheet chapter 6.1:
+      //   T = -46,85 + 175,72 * St/65535
+      // Optimise for integer fixed point arithmetic:
+      //   100 * T = -4685 + 17572*St/2^16
+      //   100 * T = 4393*St/2^14 - 4685
+      val = ((val * 4393) >> 14) - 4685;
+      *temp = (int16_t)(val/10);      
    }
    else
    {
@@ -246,12 +246,13 @@ uint8_t SHT21_Read(int16_t *temp, uint16_t *humidity)
       val += d[1];
       val &= 0xFFFC;
       
-      //   T = -6 + 125* Srh/65535      
-      //   T = -6 + Srh / 524,28
-      //   T = -6 + (Srh * 256) / 134215      |  *256	 wegen Numerik erweitern
-      //val = ((val * 256) / 134215) - 6;
-      
-      val = (uint32_t)(10*((val * 256) / 134217.73 - 6));
+      // Convert raw value from sensor to one tenth of a percent relative humidity
+      // From datasheet chapter 6.1:
+      //   RH = -6 + 125*Srh/2^16
+      // Optimise for integer fixed point arithmetic:
+      //   10 * RH = -60 + 1250*Srh/2^16
+      //   10 * RH = 625*Srh/2^15 - 60
+      val = ((625 * val) >> 15) - 60;
       *humidity = (uint16_t)val;
    }
    else
