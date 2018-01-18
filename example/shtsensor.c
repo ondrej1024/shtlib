@@ -17,6 +17,9 @@
 
 #include "sht21.h"
 
+#define SDA_PIN 44
+#define SCL_PIN 45
+
 int main(int argc, char* argv[])
 {
    int16_t temperature;
@@ -24,7 +27,7 @@ int main(int argc, char* argv[])
    uint8_t err;
 
    /* Init the library */
-   SHT21_Init(24,25);
+   SHT21_Init(SCL_PIN, SDA_PIN);
    
    /* Read temperature and humidity from sensor */
    err = SHT21_Read(&temperature, &humidity);
