@@ -30,7 +30,7 @@ http://emsystech.de/raspi-sht21/
 
 Get source code from Github:
 
-    git clone https://github.com/ondrej1024/libsht
+    git clone https://github.com/ondrej1024/shtlib.git
 
 Build library:
 
@@ -39,15 +39,15 @@ Build library:
 
 Install library:
 
-    make install
+    sudo make install
 
 ### Usage
 
 You find an example application using the library in example/shtsensor.c
 
-Build example program (library needs to be built and installed first):  
+Modify the default SDA and SCL pins in the example program source code if needed, then build the prpogram (library needs to be built and installed first):  
 
-    cd dhtlib/example
+    cd shtlib/example
     make
 
 Run example program:  
@@ -56,4 +56,4 @@ Run example program:
 
 ### Sensor wiring
 
-_TO DO_
+The sensor chips SDA and SCL lines can be wired to any available GPIO pins. Please add 10K pullups to these pins.
